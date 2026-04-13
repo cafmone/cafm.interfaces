@@ -119,7 +119,6 @@ protected static HttpURLConnection http;
 				}
 			}
 			catch (Exception e) {
-				System.out.println("connect");
 				error = "Error: " + e.getMessage();
 			}
 		} else {
