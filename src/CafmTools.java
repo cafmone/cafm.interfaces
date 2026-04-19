@@ -35,10 +35,13 @@ protected static HttpURLConnection http;
 	//--------------------------------------
 	public static void help() {
 		System.out.println("HELP");
-		System.out.println("facilities pull");
-		System.out.println("facilities identifiers");
-		System.out.println("facilities checkliste [id]");
+		System.out.println("facilities pull devices [date] (1)");
+		System.out.println("facilities pull identifiers");
+		System.out.println("facilities pull checkliste [id] (2)");
 		System.out.println("returnObject");
+		System.out.println("");
+		System.out.println("(1) 0 to return all or 2025-12-30 to return from");
+		System.out.println("(2) required");
 	}
 
 	//--------------------------------------
@@ -57,29 +60,46 @@ protected static HttpURLConnection http;
 					if(args.length > 1) {
 						switch (args[1]) {
 							case "pull":
-								facilities.pull();
-								break;
-							case "identifiers":
-								facilities.identifiers();
-								break;
-							case "checkliste":
 								if(args.length > 2) {
-									facilities.checkliste(args[2]);
-								} else { help(); }
-								break;
+									switch (args[2]) {
+										case "devices":
+											String date = "0";
+											if(args.length > 3) {
+												date = args[3];
+											}
+											facilities.pull.devices(date);
+										break;
+										case "identifiers":
+											facilities.pull.identifiers();
+										break;
+										case "checkliste":
+											if(args.length > 3) {
+												facilities.pull.checkliste(args[3]);
+											} else { help(); }
+										break;
+										default: help(); break;
+									}
+								} else {
+									help();
+								}
+							break;
 							default: help(); break;
 						}
-					} else { help(); }
-					break;
+					} else {
+						help();
+					}
+				break;
 				case "returnObject": 
 					returnObject = true;
 				break;
 				default: help(); break;
 			}
-			if(error != null) {
-				System.out.println(error);
-			}
-		} else { help(); }
+		} else {
+			help();
+		}
+		if(error != null) {
+			System.out.println(error);
+		}
 	}
 
 	//--------------------------------------
@@ -142,7 +162,7 @@ protected static HttpURLConnection http;
 			String inputLine;
 			StringBuffer html = new StringBuffer();
 			while ((inputLine = in.readLine()) != null) {
-				html.append(inputLine);
+				html.append(inputLine+"\n");
 			}
 			in.close();
 			return html.toString();
@@ -164,102 +184,113 @@ protected static HttpURLConnection http;
 
 		//--------------------------------------
 		/**
-		 * facilities.pull
+		 * class pull
 		 *
 		 * @access public
-		 * @return String
-		 * @return null
 		 */
 		//--------------------------------------
-		public static String pull() {
-			error = null;
-			try {
-				String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=export";
-				connect(url, 1);
-				if(http != null) {
-					String contentType = http.getHeaderField("Content-Type");
-					if (!"text/csv; charset=utf-8".equals(contentType)) {
-						if(error == null) {
-							error = http2string(http);
-						}
-					} else {
-						if(returnObject == true) {
-							String data = http2string(http);
-							return data;
-						} else {
-							System.out.println(http2string(http));
-						}
-					}
-				}
-			} catch (Exception e) {
-				error = "Error: " + e.getMessage();
-			}
-			return null;
-		}
+		public class pull {
 
-		//--------------------------------------
-		/**
-		 * facilities.identifiers
-		 *
-		 * @access public
-		 * @return String
-		 * @return null
-		 */
-		//--------------------------------------
-		public static String identifiers() {
-			error = null;
-			try {
-				String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=identifiers";
-				connect(url, 1);
-				if(http != null) {
-					String contentType = http.getHeaderField("Content-Type");
-					if (!"text/csv; charset=utf-8".equals(contentType)) {
-						if(error == null) {
-							error = http2string(http);
-						}
-					} else {
-						if(returnObject == true) {
-							String data = http2string(http);
-							return data;
+			//--------------------------------------
+			/**
+			 * facilities.pull.devices
+			 *
+			 * @access public
+			 * @param String date
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection devices(String date) {
+				error = null;
+				try {
+					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=export&date="+date;
+					connect(url, 1);
+					if(http != null) {
+						String contentType = http.getHeaderField("Content-Type");
+						if (!"text/csv; charset=utf-8".equals(contentType)) {
+							if(error == null) {
+								error = http2string(http);
+							}
 						} else {
-							System.out.println(http2string(http));
+							if(returnObject == true) {
+								return http;
+							} else {
+								System.out.println(http2string(http));
+							}
 						}
 					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
 				}
-			} catch (Exception e) {
-				error = "Error: " + e.getMessage();
+				return null;
 			}
-			return null;
-		}
 
-		//--------------------------------------
-		/**
-		 * facilities.checkliste
-		 *
-		 * @access public
-		 * @return HttpURLConnection
-		 * @return null
-		 */
-		//--------------------------------------
-		public static HttpURLConnection checkliste(String id) {
-			error = null;
-			try {
-				String url = settings.url + "/../shorturl/facilities/todos/id/" + id;
-				connect(url, 1);
-				if(http != null) {
-					String contentType = http.getHeaderField("Content-Type");
-					if (!"application/pdf".equals(contentType)) {
-						if(error == null) {
-							error = http2string(http);
+			//--------------------------------------
+			/**
+			 * facilities.pull.identifiers
+			 *
+			 * @access public
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection identifiers() {
+				error = null;
+				try {
+					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=identifiers";
+					connect(url, 1);
+					if(http != null) {
+						String contentType = http.getHeaderField("Content-Type");
+						if (!"text/csv; charset=utf-8".equals(contentType)) {
+							if(error == null) {
+								error = http2string(http);
+							}
+						} else {
+							if(returnObject == true) {
+								return http;
+							} else {
+								System.out.println(http2string(http));
+							}
 						}
-					} else {
-						return http;
 					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
 				}
-			} catch (Exception e) {
-				error = "Error: " + e.getMessage();
+				return null;
 			}
-			return null;
+
+			//--------------------------------------
+			/**
+			 * facilities.pull.checkliste
+			 *
+			 * @access public
+			 * @param String id
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection checkliste(String id) {
+				error = null;
+				try {
+					String url = settings.url + "/../shorturl/facilities/todos/id/" + id;
+					connect(url, 1);
+					if(http != null) {
+						String contentType = http.getHeaderField("Content-Type");
+						if (!"application/pdf".equals(contentType)) {
+							if(error == null) {
+								error = http2string(http);
+							}
+						} else {
+							return http;
+						}
+					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
+				}
+				return null;
+			}
+
 		}
 	}
 

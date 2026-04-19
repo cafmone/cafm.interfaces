@@ -6,29 +6,29 @@ public class Custom
 {
 	public static void main(String[] args) {
 
-		String csv = "";
+		HttpURLConnection csv = null;
 		HttpURLConnection pdf = null;
 		String[] init = new String[] {"returnObject"};
 		CafmTools.main(init);
 
 		// pull facilities
-		csv = CafmTools.facilities.pull();
+		csv = CafmTools.facilities.pull.devices("0");
 		if(CafmTools.error != null) {
 			System.out.println(CafmTools.error);
 		} else {
-			// System.out.println(csv);
+			//System.out.println(http2string(csv));
 		}
 
 		// facilities identifiers
-		csv = CafmTools.facilities.identifiers();
+		csv = CafmTools.facilities.pull.identifiers();
 		if(CafmTools.error != null) {
 			System.out.println(CafmTools.error);
 		} else {
-			// System.out.println(csv);
+			//System.out.println(http2string(csv));
 		}
 
 		// facilities checkliste
- 		pdf = CafmTools.facilities.checkliste("5f2950d6cde9d");
+ 		pdf = CafmTools.facilities.pull.checkliste("5f2950d6cde9d");
 		if(CafmTools.error != null) {
 			System.out.println(CafmTools.error);
 		} else {
@@ -50,4 +50,32 @@ public class Custom
 		}
 
 	}
+	
+	//--------------------------------------
+	/**
+	 * hhtp2string
+	 *
+	 * @access public
+	 * @return String
+	 */
+	//--------------------------------------
+	protected static String http2string(HttpURLConnection http) {
+		try {
+			BufferedReader in = new BufferedReader(
+				new InputStreamReader(http.getInputStream())
+			);
+			String inputLine;
+			StringBuffer html = new StringBuffer();
+			while ((inputLine = in.readLine()) != null) {
+				html.append(inputLine+"\r\n");
+			}
+			in.close();
+			return html.toString();
+		}
+		catch (Exception e) {
+			return "";
+		}
+	}
+	
+	
 }

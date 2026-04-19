@@ -6,7 +6,7 @@ public CafmToolsSettings get() {
 	obj.user = "[your user]";
 	obj.pass = "[your password]";
 	obj.url = "http://127.0.0.1/login/";
-	obj.plugin = "[your user]";
+	obj.plugin = "[plugin name]";
 	obj.pubkey = "[server ssh public key]";
 	obj.apikey = "[server api key]";
 	return obj;
