@@ -36,12 +36,14 @@ protected static HttpURLConnection http;
 	public static void help() {
 		System.out.println("HELP");
 		System.out.println("facilities pull devices [date] (1)");
+		System.out.println("facilities pull trash");
 		System.out.println("facilities pull identifiers");
 		System.out.println("facilities pull checkliste [id] (2)");
-		System.out.println("returnObject");
+		System.out.println("returnObject (3)");
 		System.out.println("");
-		System.out.println("(1) 0 to return all or 2025-12-30 to return from");
+		System.out.println("(1) 2025-12-30 or 0 to return all");
 		System.out.println("(2) required");
+		System.out.println("(3) return instead of print");
 	}
 
 	//--------------------------------------
@@ -68,6 +70,9 @@ protected static HttpURLConnection http;
 												date = args[3];
 											}
 											facilities.pull.devices(date);
+										break;
+										case "trash":
+											facilities.pull.trash();
 										break;
 										case "identifiers":
 											facilities.pull.identifiers();
@@ -205,6 +210,40 @@ protected static HttpURLConnection http;
 				error = null;
 				try {
 					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=export&date="+date;
+					connect(url, 1);
+					if(http != null) {
+						String contentType = http.getHeaderField("Content-Type");
+						if (!"text/csv; charset=utf-8".equals(contentType)) {
+							if(error == null) {
+								error = http2string(http);
+							}
+						} else {
+							if(returnObject == true) {
+								return http;
+							} else {
+								System.out.println(http2string(http));
+							}
+						}
+					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
+				}
+				return null;
+			}
+
+			//--------------------------------------
+			/**
+			 * facilities.pull.trash
+			 *
+			 * @access public
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection trash() {
+				error = null;
+				try {
+					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=trash";
 					connect(url, 1);
 					if(http != null) {
 						String contentType = http.getHeaderField("Content-Type");

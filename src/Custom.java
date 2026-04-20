@@ -19,6 +19,14 @@ public class Custom
 			//System.out.println(http2string(csv));
 		}
 
+		// facilities trash
+		csv = CafmTools.facilities.pull.trash();
+		if(CafmTools.error != null) {
+			System.out.println(CafmTools.error);
+		} else {
+			//System.out.println(http2string(csv));
+		}
+
 		// facilities identifiers
 		csv = CafmTools.facilities.pull.identifiers();
 		if(CafmTools.error != null) {
