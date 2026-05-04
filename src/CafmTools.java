@@ -12,7 +12,12 @@ import java.net.URI;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.InputStream;
+import java.io.DataOutputStream;
+//import java.io.OutputStreamWriter;
+import java.io.IOException;
 import java.util.Base64;
+import java.io.File;
+import java.nio.file.Files;
 
 public class CafmTools
 {
@@ -37,8 +42,10 @@ protected static HttpURLConnection http;
 		System.out.println("HELP");
 		System.out.println("facilities pull devices [date] (1)");
 		System.out.println("facilities pull trash");
+		System.out.println("facilities pull log");
 		System.out.println("facilities pull identifiers");
 		System.out.println("facilities pull checkliste [id] (2)");
+		System.out.println("facilities push devices [path]");
 		System.out.println("returnObject (3)");
 		System.out.println("");
 		System.out.println("(1) 2025-12-30 or 0 to return all");
@@ -74,6 +81,9 @@ protected static HttpURLConnection http;
 										case "trash":
 											facilities.pull.trash();
 										break;
+										case "log":
+											facilities.pull.log();
+										break;
 										case "identifiers":
 											facilities.pull.identifiers();
 										break;
@@ -81,6 +91,22 @@ protected static HttpURLConnection http;
 											if(args.length > 3) {
 												facilities.pull.checkliste(args[3]);
 											} else { help(); }
+										break;
+										default: help(); break;
+									}
+								} else {
+									help();
+								}
+							break;
+							case "push":
+								if(args.length > 2) {
+									switch (args[2]) {
+										case "devices":
+											String path = "0";
+											if(args.length > 3) {
+												path = args[3];
+											}
+											facilities.push.devices(path);
 										break;
 										default: help(); break;
 									}
@@ -113,7 +139,7 @@ protected static HttpURLConnection http;
 	 *
 	 * @access protected
 	 * @param String url
-	 * @param int redirects
+	 * @param int redirects 0=nofollow
 	 */
 	//--------------------------------------
 	protected static void connect(String url, int redirects) {
@@ -126,20 +152,25 @@ protected static HttpURLConnection http;
 				http = (HttpURLConnection) obj.openConnection();
 				http.setReadTimeout(5000);
 				http.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+				http.setRequestMethod("POST");
+				http.setRequestProperty("Connection", "Keep-Alive");
+				http.setRequestProperty("Cache-Control", "no-cache");
 				http.addRequestProperty("User-Agent", settings.plugin);
 				http.setRequestProperty("Authorization", authHeaderValue);
-				int status = http.getResponseCode();
-				if (status != HttpURLConnection.HTTP_OK && status != 401) {
-					if (
-						status == HttpURLConnection.HTTP_MOVED_TEMP || 
-						status == HttpURLConnection.HTTP_MOVED_PERM || 
-						status == HttpURLConnection.HTTP_SEE_OTHER
-					) {
-						connect(http.getHeaderField("Location"), redirects+1);
-					}
-				} else {
-					if(error == null && status != HttpURLConnection.HTTP_OK) {
-						error = "Error: "+status;
+				if(redirects != 0) {
+					int status = http.getResponseCode();
+					if (status != HttpURLConnection.HTTP_OK && status != 401) {
+						if (
+							status == HttpURLConnection.HTTP_MOVED_TEMP || 
+							status == HttpURLConnection.HTTP_MOVED_PERM || 
+							status == HttpURLConnection.HTTP_SEE_OTHER
+						) {
+							connect(http.getHeaderField("Location"), redirects+1);
+						}
+					} else {
+						if(error == null && status != HttpURLConnection.HTTP_OK) {
+							error = "Error: "+status;
+						}
 					}
 				}
 			}
@@ -161,9 +192,16 @@ protected static HttpURLConnection http;
 	//--------------------------------------
 	protected static String http2string(HttpURLConnection http) {
 		try {
-			BufferedReader in = new BufferedReader(
-				new InputStreamReader(http.getInputStream())
-			);
+			BufferedReader in;
+			if(http.getErrorStream() != null) {
+				in = new BufferedReader(
+					new InputStreamReader(http.getErrorStream())
+				);
+			} else {
+				in = new BufferedReader(
+					new InputStreamReader(http.getInputStream())
+				);
+			}
 			String inputLine;
 			StringBuffer html = new StringBuffer();
 			while ((inputLine = in.readLine()) != null) {
@@ -267,6 +305,40 @@ protected static HttpURLConnection http;
 
 			//--------------------------------------
 			/**
+			 * facilities.pull.log
+			 *
+			 * @access public
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection log() {
+				error = null;
+				try {
+					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=log";
+					connect(url, 1);
+					if(http != null) {
+						String contentType = http.getHeaderField("Content-Type");
+						if (!"text/plain; charset=utf-8".equals(contentType)) {
+							if(error == null) {
+								error = http2string(http);
+							}
+						} else {
+							if(returnObject == true) {
+								return http;
+							} else {
+								System.out.println(http2string(http));
+							}
+						}
+					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
+				}
+				return null;
+			}
+
+			//--------------------------------------
+			/**
 			 * facilities.pull.identifiers
 			 *
 			 * @access public
@@ -323,6 +395,70 @@ protected static HttpURLConnection http;
 						} else {
 							return http;
 						}
+					}
+				} catch (Exception e) {
+					error = "Error: " + e.getMessage();
+				}
+				return null;
+			}
+
+		}
+
+		//--------------------------------------
+		/**
+		 * class push
+		 *
+		 * @access public
+		 */
+		//--------------------------------------
+		public class push {
+
+			//--------------------------------------
+			/**
+			 * facilities.push.devices
+			 *
+			 * @access public
+			 * @param String date
+			 * @return HttpURLConnection
+			 * @return null
+			 */
+			//--------------------------------------
+			public static HttpURLConnection devices(String path) {
+				error = null;
+				try {
+					String url = settings.url+"/api.php?plugin="+settings.plugin+"&action=facilities&facilities=import";
+					connect(url, 0);
+					if(http != null) {
+
+						File file = new File(path);
+						String mimeType = Files.probeContentType(file.toPath());
+						byte[] fileContent = Files.readAllBytes(file.toPath());
+
+						http.setDoOutput(true);
+						http.addRequestProperty("Content-Type", "multipart/form-data;boundary=*****");
+						DataOutputStream request = new DataOutputStream(http.getOutputStream());
+						request.writeBytes("--*****");
+						request.writeBytes("\r\n");
+						request.writeBytes("Content-Disposition: form-data; name=\"attachment\"; filename=\"facilities.csv\"");
+						request.writeBytes("\r\n");
+						request.writeBytes("Content-Type: "+mimeType);
+						request.writeBytes("\r\n\r\n");
+						request.write(fileContent);
+						request.writeBytes("\r\n");
+						request.writeBytes("--*****--");
+						request.writeBytes("\r\n");
+						request.flush();
+						request.close();
+
+						int status = http.getResponseCode();
+						if(status != 200) {
+							//System.out.println(status);
+							System.out.println(http2string(http));
+							//error = http2string(http);
+						} else {
+							System.out.println(http2string(http));
+						}
+
 					}
 				} catch (Exception e) {
 					error = "Error: " + e.getMessage();

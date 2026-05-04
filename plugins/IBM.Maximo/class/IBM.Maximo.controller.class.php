@@ -1,6 +1,6 @@
 <?php
 /**
- * ibm_maximo_controller
+ * IBM_Maximo_controller
  *
  * @package phppublisher
  * @author Alexander Kuballa
@@ -10,7 +10,7 @@
  */
 require_once(CLASSDIR.'lib/interfaces/interfaces.controller.class.php');
 
-class ibm_maximo_controller extends interfaces_controller
+class IBM_Maximo_controller extends interfaces_controller
 {
 	//--------------------------------------------
 	/**
@@ -38,6 +38,23 @@ class ibm_maximo_controller extends interfaces_controller
 		$this->modules = array('facilities');
 		$this->lang['label'] = 'IBM Maximo';
 		$this->lang['export']['legend_receiver'] = 'IBM Maximo';
+	}
+
+	//--------------------------------------------
+	/**
+	 * Cli
+	 *
+	 * @access public
+	 * @return mixed
+	 */
+	//--------------------------------------------
+	function cli() {
+		require_once(CLASSDIR.'plugins/IBM.Maximo/class/IBM.Maximo.cli.class.php');
+		$controller = new IBM_Maximo_cli($this);
+		$controller->tpldir = $this->tpldir;
+		$controller->actions_name = $this->actions_name;
+		$data = $controller->action();
+		return $data;
 	}
 
 }

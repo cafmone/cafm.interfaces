@@ -1,6 +1,6 @@
 <?php
 /**
- * rib_fm_api
+ * RIB_FM_api
  *
  * @package phppublisher
  * @author Alexander Kuballa
